@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-import csv
 from pymongo import MongoClient
 
 dbName = "myLibrary"
@@ -20,7 +19,7 @@ def popolaDB(csvPath, collectionName):
 
 
 def inizializzaDB():
-    # GESTIONE CSV per le collection ATHLETE, EVENT, ACHIEVEMENT
+    # GESTIONE CSV per le collection BOOKS, USER, RATING
     rootPath = "./dataset/"
     dataAE = pd.read_csv(rootPath + "processed_data.csv")
 
