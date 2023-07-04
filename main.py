@@ -4,26 +4,30 @@ import pymongo.cursor
 from QueryDb import *
 from load_db import checkInizializza
 from dataCleaning import mydataCleaning
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 queries = ["Inserisci un Libro", "Modifica un Libro", "Rimuovi un Libro",
            "Inserisci un Rating", "Modifica un Rating", "Rimuovi un Rating",
-           "Inserisci un Utente", "Modifica un Utente", "Rimuovi un Utente"]
+           "Inserisci un Utente", "Modifica un Utente", "Rimuovi un Utente",
+           "Mostra i libri pubblicati un determinato anno",
+           "Dettagli essenziali di un libro + rating medio",
+           "Libri di una casa editrice che hanno un rating superiore a uno specifico",
+           "Mostra gli utenti con meno di 30 anni che abitano in una specifica città",
+           "Utenti che hanno assegnato a un libro un punteggio superiore a quanto dato in input"]
 
 class Window(Tk):
 
     def __init__(self):
         super().__init__()
-        # Import the sun-valley.tcl file to use theme
+        # Importo il file sun-valley.tcl per usare il tema
         self.tk.call("source", "./Sun-Valley-ttk-theme-master/sun-valley.tcl")
-        # Then set the theme you want with the set_theme procedure
+        # Setto il tema preferito
         self.tk.call("set_theme", "dark")
         self.configure(background='#8fbc8f')
         self.geometry('1250x750')
         self.title('Libreria')
         self.iconbitmap("library.ico")
 
-        # style for widgets: label error and label not found
+        # Stile per i widgets: 'label error' e 'label not found'
         styleError = Style()
         styleError.configure("Error.Message.TLabel", foreground="red", background="#fff")
         correctStyle = Style()
@@ -44,7 +48,7 @@ class Window(Tk):
         self.outputFrame.rowconfigure(0, weight=1)
         self.outputFrame.columnconfigure(0, weight=1)
 
-        # Create widgets and variables for input area
+        # Creo widgets e variables per l'area di input
         self.labelsAndEntries = {}
         self.radioVar = StringVar()
         self.radioMedal = StringVar()
@@ -52,19 +56,19 @@ class Window(Tk):
         self.labelError = Label(self, text="", style="BW.TLabel")
         self.subtmitbtn = Button(self, text="Esegui", command=self.callQuery)
 
-        # Create widgets and variables for output area
+        # Creo widgets e variables per l'area di output
         self.tree = Treeview(self.outputFrame)
         self.labelNotFound = Label(self.outputFrame, text="")
         self.canvas = None
 
     def checkInput(self, key):
-        #Checks if input is in the correct format. Returns None if not
+        #Verifico che l'input sia nel formato corretto. Se no, restituisco None
         self.focus
         entry = self.labelsAndEntries[key][1]
         inputField = None
         inputField = entry.get()
 
-        if key == "Anno" or key == "Eta" or key == "Rating" or key == "ID":  # check on integers
+        if key == "AnnoPubblicazione" or key == "Eta" or key == "Rating" or key == "ID":  # check on integers
                 try:
                     inputField = int(inputField)
                 except:
@@ -79,19 +83,19 @@ class Window(Tk):
                     inputField = None
                 else:
                       inputField = entry.get()            
-        else:  # check on strings
+        else:  # verifica sulle stringhe
                 if inputField is None:
                     return None
                 special_characters = "\"!@#$%^&*()+?_=<>/\""
-                if any(c in special_characters for c in inputField):# check on special characters
+                if any(c in special_characters for c in inputField):# verifica sui caratteri speciali
                     inputField = None
-                elif all(c in " " for c in inputField): # check on string full of blank spaces
+                elif all(c in " " for c in inputField): # stringhe con spazi bianchi
                     inputField = None
         
         return inputField
 
     def callQuery(self):
-        #Get value from the input form and query the db
+        #Prendo l'input dal form e invio la query al db
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.tree.pack_forget()
@@ -105,7 +109,7 @@ class Window(Tk):
             isbn = self.checkInput("isbn")
             titolo = self.checkInput("Titolo")
             autore= self.checkInput("Autore")
-            year = self.checkInput("Anno Pubblicazione")
+            year = self.checkInput("AnnoPubblicazione")
             publisher = self.checkInput("Editore")
             category = self.checkInput("Categoria")            
             if isbn is None:
@@ -133,7 +137,7 @@ class Window(Tk):
             isbn = self.checkInput("isbn")
             titolo = self.checkInput("Titolo")
             autore= self.checkInput("Autore")
-            year = self.checkInput("Anno Pubblicazione")
+            year = self.checkInput("AnnoPubblicazione")
             publisher = self.checkInput("Editore")
             category = self.checkInput("Categoria")            
             if isbn is None:
@@ -302,6 +306,53 @@ class Window(Tk):
                 else:
                     update_op = "Cancellazione completata."
 
+        elif val == 9:
+           #Libri pubblicati lo stesso anno
+            anno = self.checkInput("AnnoPubblicazione")
+            if anno is not None:
+                res, numQuery = query1(anno)
+            else:
+                errorText = "Inserisci un anno valido"
+                
+        elif val == 10:
+            #Libro + rating medio
+            libro = self.checkInput("isbn")
+            if libro is not None:
+                res, numQuery = query2(libro)
+            else:
+                errorText = "Inserisci un ISBN valido"
+                
+        elif val == 11:
+            #Libri di un certo publisher con punteggio superiore a uno dato in input
+            editore = self.checkInput("Editore")
+            punteggio = self.checkInput("Rating")
+            if punteggio is None:
+                errorText = "Inserisci un rating valido"
+            if editore is None:
+                errorText = "Inserisci un editore valido"
+            else:
+                res, numQuery = query3(editore, punteggio)
+                
+        elif val == 12:
+            #Utenti con meno di 30 anni che abitano in una data città
+            città = self.checkInput("Città")
+            if città is not None:
+                res, numQuery = query4(città)
+            else:
+                errorText = "Inserisci una città valida"
+                
+        elif val == 13:
+            #Utenti che hanno assegnato un punteggio superiore rispetto a quello in input 
+            #ad uno specifico libro
+            isbn = self.checkInput("isbn")
+            punteggio = self.checkInput("Rating")
+            if punteggio is None:
+                errorText = "Inserisci un rating valido"
+            if isbn is None:
+                errorText = "Inserisci un ISBN valido"
+            else:
+                res, numQuery = query5(isbn, punteggio)
+
         if errorText != "":
             self.labelError.config(text=errorText, style="Error.Message.TLabel")
             self.labelError.grid(row=3, column=0, padx=1, pady=4)
@@ -314,13 +365,13 @@ class Window(Tk):
                 self.showResults(res, numQuery)
 
     def createLabelsAndEntries(self):
-        # Create widgets and a dictionary to group them
+        # Creo widgets e un dizionario per raggrupparli
         
         # BOOK
         labelIsbn = Label(self.inputFrame, text="Isbn")
         labelTitolo = Label(self.inputFrame, text="Titolo")
         labelAutore = Label(self.inputFrame, text="Autore")
-        labelAnno = Label(self.inputFrame, text="Anno Pubblicazione")
+        labelAnno = Label(self.inputFrame, text="AnnoPubblicazione")
         labelEditore = Label(self.inputFrame, text="Editore")
         labelCategoria = Label(self.inputFrame, text="Categoria")
         
@@ -350,25 +401,25 @@ class Window(Tk):
         entryRating = Entry(self.inputFrame)
         
         self.labelsAndEntries = {"isbn": [labelIsbn, entryIsbn], "Titolo": [labelTitolo, entryTitolo],
-                                 "Autore": [labelAutore, entryAutore], "Anno Pubblicazione": [labelAnno, entryAnno],
+                                 "Autore": [labelAutore, entryAutore], "AnnoPubblicazione": [labelAnno, entryAnno],
                                  "Editore": [labelEditore, entryEditore], "Categoria": [labelCategoria, entryCategoria],
                                  "ID": [labelIDUtente, entryIDUtente], "Età": [labelEta, entryEta],
                                  "Città": [labelCitta, entryCitta], "Nazione": [labelNazione, entryNazione],
                                  "Stato": [labelStato,entryStato], "Rating": [labelRating, entryRating]}
     
     def showFields(self, key, riga):
-        # Arrange labels and entries into the input frame
+        # Dispongo labels e entries nell'input frame
         label = self.labelsAndEntries[key][0]
         entry = self.labelsAndEntries[key][1]
 
         label.grid(row=riga, column=0, padx=2, pady=2)
         entry.grid(row=riga, column=1, padx=2, pady=2)
-        entry.focus_set() # gets the focus on the 1st entry in the form
+        entry.focus_set() # focus sulla prima entry nel form
         self.subtmitbtn.grid(row=2, column=0, pady=5)
         self.bind('<Return>', lambda event: self.callQuery()) # Press enter key to execute query
 
     def hideFields(self):
-       # Hide already created fields to place the new ones
+       # Nascondo i fields già creati per rimpiazzarli con i nuovi
         for item in self.labelsAndEntries.values():     
             item[0].grid_remove()
             item[1].grid_remove()
@@ -382,7 +433,7 @@ class Window(Tk):
             self.outputFrame.grid_remove()
 
     def menu_item_selected(self, *args):
-        # handle menu selected event 
+        # menu selected event 
         self.inputFrame.grid(row=1, column=0, padx=10, pady=10)
         val = int(self.selected_query.get())
         self.menu_button.config(text=queries[val])
@@ -391,10 +442,10 @@ class Window(Tk):
             self.showFields("isbn", 0)
             self.showFields("Titolo", 1)
             self.showFields("Autore", 2)
-            self.showFields("Anno Pubblicazione", 3)
+            self.showFields("AnnoPubblicazione", 3)
             self.showFields("Editore", 4)
             self.showFields("Categoria", 5)
-        elif val == 2:
+        elif val == 2 or val == 10:
             self.showFields("isbn", 0)
         elif val == 3 or val == 4:
             self.showFields("ID", 0)
@@ -411,28 +462,58 @@ class Window(Tk):
             self.showFields("Stato", 4)
         elif val == 8:
             self.showFields("ID", 0)
+        elif val == 9:
+            self.showFields("AnnoPubblicazione", 0)
+        elif val == 11:
+            self.showFields("Editore", 0)
+            self.showFields("Rating", 1)
+        elif val == 12:
+            self.showFields("Città", 0)
+        elif val == 13:
+            self.showFields("isbn", 0)
+            self.showFields("Rating", 1)
    
     def showResults(self, results, numQuery):
-        # Arrange widgets in the output area
+        # Dispongo i widgets nell'area di output
         self.labelNotFound.pack_forget()
         self.outputFrame.grid(row=4, columnspan=4, padx=10, pady=10, sticky=E+W+N+S)
-        # Check on length of results: if 0 show label for no result
+        # Verifico la lunghezza dei risultati: se 0, label for no result
         if (type(results) is list and len(results) == 0) or (type(results) is pymongo.cursor.Cursor and results.count() == 0) or (type(results) is dict and len(results.keys())==0):
             self.labelNotFound.config(text="Nessun risultato trovato")
             self.labelNotFound.pack(fill="both", expand=True)
+        else:
+            cols = list(results[0].keys())
+            cols = tuple(cols)
+            self.tree.config(col=cols, show="headings")
+            for col in cols:
+                self.tree.heading(col, text=col)
+                minWidth = 0
+                if col == "Età" or col == "Rating" or col == "ID":
+                    width = 50
+                elif col == "AnnoPubblicazione" or col == "Categoria" or col == "Città" or col == "Nazione" or col == "Stato":
+                    width = 100
+                else:
+                    width = 150
+                self.tree.column(col, minwidth=minWidth, width=width)
+                
+            for result in results:
+                myValues = []
+                for col in cols:
+                    myValues.append(result[col])
+                self.tree.insert("", "end", values=tuple(myValues))
+            self.tree.pack(fill="both", expand=True) # Show results
 
     def create_menu_button(self):
-        # create a menu button for query selecting
+        # menu per la selezione delle query
         menu = Menu(self.menu_button, tearoff=False)
         # Numero elementi MENU
-        #numbers = [x for x in range(0, 9)]  # indexes for queries
-        numbers = [x for x in range(0, 9)]  # indexes for queries
+        numbers = [x for x in range(0, 14)]  # indexes for queries
         for number in numbers:
             menu.add_radiobutton(
                 label=str(number + 1) + ". " + queries[number],
                 value=number,
                 variable=self.selected_query)
-        # associate menu with the Menubutton
+        # Associo menu con Menubutton
         self.menu_button["menu"] = menu
         self.menu_button.grid(row=0, column=0, padx=10, pady=10)
 
