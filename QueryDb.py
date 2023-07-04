@@ -1,6 +1,3 @@
-from matplotlib import pyplot as plt
-import numpy as np
-from matplotlib.figure import Figure
 from load_db import db
 
 #BOOK
