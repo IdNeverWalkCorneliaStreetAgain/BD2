@@ -478,7 +478,7 @@ class Window(Tk):
         self.labelNotFound.pack_forget()
         self.outputFrame.grid(row=4, columnspan=4, padx=10, pady=10, sticky=E+W+N+S)
         # Verifico la lunghezza dei risultati: se 0, label for no result
-        if (type(results) is list and len(results) == 0) or (type(results) is pymongo.cursor.Cursor and results.count() == 0) or (type(results) is dict and len(results.keys())==0):
+        if (type(results) is list and len(results) == 0) or (type(results) is dict and len(results.keys())==0):
             self.labelNotFound.config(text="Nessun risultato trovato")
             self.labelNotFound.pack(fill="both", expand=True)
         else:
